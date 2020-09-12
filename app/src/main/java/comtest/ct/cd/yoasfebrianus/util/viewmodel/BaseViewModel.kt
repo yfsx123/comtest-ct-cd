@@ -1,4 +1,4 @@
-package comtest.ct.cd.yoasfebrianus.util
+package comtest.ct.cd.yoasfebrianus.util.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
