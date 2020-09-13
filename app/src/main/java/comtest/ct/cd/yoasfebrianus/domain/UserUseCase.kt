@@ -6,6 +6,8 @@ import comtest.ct.cd.yoasfebrianus.util.usecase.RequestParams
 import comtest.ct.cd.yoasfebrianus.util.usecase.UseCase
 import comtest.ct.cd.yoasfebrianus.view.viewmodel.UserListModel
 import comtest.ct.cd.yoasfebrianus.view.viewmodel.UserModel
+import java.lang.Error
+import java.lang.Exception
 
 class UserUseCase(
     private val userRemoteDataSource: UserRemoteDataSource
@@ -20,6 +22,9 @@ class UserUseCase(
         val result = userRemoteDataSource.fetchData(
             useCaseRequestParams.getString(REQ_KEYWORD, ""),
             useCaseRequestParams.getInt(REQ_PAGE, 1))
+        if (result.raw().code >= 400) {
+            throw Exception("response from github : " + result.raw().message)
+        }
         result.body()?.let {
             return mapUserdata(it.userList)
         }
