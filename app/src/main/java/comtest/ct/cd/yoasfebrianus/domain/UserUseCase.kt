@@ -13,20 +13,24 @@ class UserUseCase(
 
     companion object {
         const val REQ_KEYWORD = "keyword"
+        const val REQ_PAGE = "page"
     }
 
     override suspend fun executeOnBackground(): UserListModel {
-        val result = userRemoteDataSource.fetchData(useCaseRequestParams.getString(REQ_KEYWORD, ""))
+        val result = userRemoteDataSource.fetchData(
+            useCaseRequestParams.getString(REQ_KEYWORD, ""),
+            useCaseRequestParams.getInt(REQ_PAGE, 1))
         result.body()?.let {
             return mapUserdata(it.userList)
         }
         return UserListModel()
     }
 
-    fun setParams(keyword: String) {
+    fun setParams(keyword: String, page: Int) {
         useCaseRequestParams = RequestParams.EMPTY
         val params = RequestParams.create()
         params.putString(REQ_KEYWORD, keyword)
+        params.putInt(REQ_PAGE, page)
         useCaseRequestParams = params
     }
 
@@ -38,6 +42,6 @@ class UserUseCase(
                 imageUrl = data.avatarUrl,
                 userName = data.login))
         }
-        return UserListModel(userList)
+        return UserListModel(dataList = userList, hasNextData = userList.isNotEmpty())
     }
 }

@@ -12,5 +12,7 @@ import retrofit2.http.Query
 interface UserService {
 
     @GET("/search/users")
-    suspend fun getUserFirst(@Query(value = "q", encoded = true) keyword: String): Response<UserResponse>
+    suspend fun getUsers(@Query(value = "q", encoded = true) keyword: String,
+                        @Query(value = "page")page: Int): Response<UserResponse>
+
 }

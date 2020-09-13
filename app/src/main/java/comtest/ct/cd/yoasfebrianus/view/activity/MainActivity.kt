@@ -22,6 +22,7 @@ import comtest.ct.cd.yoasfebrianus.view.presenter.UserViewModel
 import comtest.ct.cd.yoasfebrianus.view.viewmodel.SortItem
 import comtest.ct.cd.yoasfebrianus.view.viewmodel.UserListModel
 import comtest.ct.cd.yoasfebrianus.view.viewmodel.UserModel
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
 import java.lang.Exception
 import javax.inject.Inject
@@ -36,6 +37,7 @@ class MainActivity : AppCompatActivity(),
     override val coroutineContext: CoroutineContext = masterJob + Dispatchers.Main
 
     lateinit var recyclerView: RecyclerView
+    lateinit var layoutManager: LinearLayoutManager
     lateinit var etSearch: EditText
     lateinit var sortMenu : ImageView
     lateinit var rootLayout : ConstraintLayout
@@ -46,6 +48,8 @@ class MainActivity : AppCompatActivity(),
     lateinit var adapter: UserAdapter
 
     var sortItemList: List<SortItem> = mutableListOf()
+    var isLoading = false
+    var baseKeyword = ""
 
     lateinit var sortBottomSheet: BottomSheetDialog
 
@@ -70,9 +74,11 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun callData(isFirstTime: Boolean, keyword: String) {
-        if (keyword.isEmpty()) return
+        if (keyword.isEmpty() || isLoading) return
+        isLoading = true
         if (isFirstTime) {
             viewModel.getUserData(keyword)
+            baseKeyword = keyword
         } else {
             viewModel.getUserDataMore(keyword)
         }
@@ -88,7 +94,8 @@ class MainActivity : AppCompatActivity(),
         sortItemList = getDefaultSortItem()
         adapter = UserAdapter(this)
         recyclerView.adapter = adapter
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        layoutManager = LinearLayoutManager(this)
+        recyclerView.layoutManager = layoutManager
 
         val watcher = object: TextWatcher {
             private var keyword = ""
@@ -112,6 +119,20 @@ class MainActivity : AppCompatActivity(),
         sortMenu.setOnClickListener{
             showBottomSheetSort()
         }
+
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (!isLoading &&
+                    layoutManager.findLastCompletelyVisibleItemPosition() == adapter.itemCount - 1) {
+                    callData(false, baseKeyword)
+                }
+            }
+
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+            }
+        })
     }
 
 
@@ -124,10 +145,20 @@ class MainActivity : AppCompatActivity(),
     private fun initViewModelResp() {
         viewModel.run {
             userDataResp.observe(this@MainActivity, Observer {
+                isLoading = false
                 if(it.isSuccess) {
                     populateDataFirstTime(it.getOrDefault(UserListModel()))
                 } else {
                     showErrorLoadFirstTime(Exception(it.exceptionOrNull()))
+                }
+            })
+
+            userDataMoreResp.observe(this@MainActivity, Observer {
+                isLoading = false
+                if (it.isSuccess) {
+                    populateDataMore(it.getOrDefault(UserListModel()))
+                } else {
+                    showErrorLoadMore(Exception(it.exceptionOrNull()))
                 }
             })
         }
@@ -143,8 +174,16 @@ class MainActivity : AppCompatActivity(),
         rootLayout.showSnackbar(e.localizedMessage)
     }
 
-    private fun populateDataMore(data: UserListModel) {
 
+    private fun populateDataMore(data: UserListModel) {
+        adapter.insertList(dataList = data.dataList)
+        if (!data.hasNextData) {
+            recyclerView.clearOnScrollListeners()
+        }
+    }
+
+    private fun showErrorLoadMore(e: Exception) {
+        rootLayout.showSnackbar(e.localizedMessage)
     }
 
     private fun showBottomSheetSort() {
