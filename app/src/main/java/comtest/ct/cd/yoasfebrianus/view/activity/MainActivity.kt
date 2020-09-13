@@ -120,19 +120,7 @@ class MainActivity : AppCompatActivity(),
             showBottomSheetSort()
         }
 
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                if (!isLoading &&
-                    layoutManager.findLastCompletelyVisibleItemPosition() == adapter.itemCount - 1) {
-                    callData(false, baseKeyword)
-                }
-            }
-
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-            }
-        })
+        recyclerView.addOnScrollListener(rvScrollListener)
     }
 
 
@@ -167,6 +155,7 @@ class MainActivity : AppCompatActivity(),
     private fun populateDataFirstTime(data: UserListModel) {
         sortItemList = getDefaultSortItem()
         adapter.addFirstSetItems(dataList = data.dataList)
+        recyclerView.addOnScrollListener(rvScrollListener)
         recyclerView.smoothScrollToPosition(0)
     }
 
@@ -198,7 +187,7 @@ class MainActivity : AppCompatActivity(),
         sortBottomSheet.show()
     }
 
-    fun getDefaultSortItem(): List<SortItem> {
+    private fun getDefaultSortItem(): List<SortItem> {
         val itemList: MutableList<SortItem> = mutableListOf()
         itemList.add(SortItem(SortItem.ID_SORT_ASC, SortItem.KEY_SORT_ASC, false))
         itemList.add(SortItem(SortItem.ID_SORT_DESC, SortItem.KEY_SORT_DESC, false))
@@ -206,7 +195,7 @@ class MainActivity : AppCompatActivity(),
         return itemList
     }
 
-    fun getItemBasedOnSelected(sortItem: SortItem): List<SortItem> {
+    private fun getItemBasedOnSelected(sortItem: SortItem): List<SortItem> {
         val itemList: MutableList<SortItem> = mutableListOf()
         if (sortItem.id == SortItem.ID_SORT_ASC && sortItem.checked) {
             itemList.add(SortItem(SortItem.ID_SORT_ASC, SortItem.KEY_SORT_ASC, true))
@@ -220,5 +209,19 @@ class MainActivity : AppCompatActivity(),
             itemList.addAll(getDefaultSortItem())
         }
         return itemList
+    }
+
+    val rvScrollListener = object : RecyclerView.OnScrollListener() {
+        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            super.onScrolled(recyclerView, dx, dy)
+            if (!isLoading &&
+                layoutManager.findLastCompletelyVisibleItemPosition() == adapter.itemCount - 1) {
+                callData(false, baseKeyword)
+            }
+        }
+
+        override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+            super.onScrollStateChanged(recyclerView, newState)
+        }
     }
 }
