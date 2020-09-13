@@ -7,9 +7,10 @@ import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Headers
+import retrofit2.http.Query
 
 interface UserService {
 
-    @GET("/search/users?q=a")
-    suspend fun getUserFirst(): Response<UserResponse>
+    @GET("/search/users")
+    suspend fun getUserFirst(@Query(value = "q", encoded = true) keyword: String): Response<UserResponse>
 }

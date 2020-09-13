@@ -10,7 +10,7 @@ import javax.inject.Inject
 class UserRemoteDataSource @Inject constructor(
     private val service: UserService) {
 
-    suspend fun fetchData(): Response<UserResponse> {
-        return service.getUserFirst()
+    suspend fun fetchData(keyword: String): Response<UserResponse> {
+        return service.getUserFirst(keyword)
     }
 }

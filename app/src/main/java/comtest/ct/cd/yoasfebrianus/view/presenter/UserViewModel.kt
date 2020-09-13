@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import comtest.ct.cd.yoasfebrianus.data.datasource.UserRemoteDataSource
 import comtest.ct.cd.yoasfebrianus.data.pojo.UserPojo
 import comtest.ct.cd.yoasfebrianus.di.UserDispatcherProvider
+import comtest.ct.cd.yoasfebrianus.domain.UserUseCase
 import comtest.ct.cd.yoasfebrianus.util.viewmodel.BaseViewModel
 import comtest.ct.cd.yoasfebrianus.view.viewmodel.UserListModel
 import comtest.ct.cd.yoasfebrianus.view.viewmodel.UserModel
@@ -15,7 +16,7 @@ import javax.inject.Inject
 
 class UserViewModel @Inject constructor(
     private val baseDispatcher: UserDispatcherProvider,
-    private val userRemoteDataSource: UserRemoteDataSource)
+    private val userUseCase: UserUseCase)
     : BaseViewModel(baseDispatcher.ui()){
 
     val userDataResp: LiveData<Result<UserListModel>>
@@ -27,38 +28,35 @@ class UserViewModel @Inject constructor(
         get() = _userDataMoreResp
     private val _userDataMoreResp = MutableLiveData<Result<UserListModel>>()
 
-
-    fun getUserData() {
+    fun getUserData(keyword: String) {
         viewModelScope.launch(baseDispatcher.io()) {
             try {
-                val data = userRemoteDataSource.fetchData()
-                var userData = UserListModel()
-                data.body()?.let {
-                    userData = mapUserdata(it.userList)
-                }
-                if (userData.dataList.isNotEmpty()) {
-                    _userDataResp.value = Result.success(userData)
+                userUseCase.setParams(keyword)
+                val data = userUseCase.executeOnBackground()
+                if (data.dataList.isNotEmpty()) {
+                    _userDataResp.postValue(Result.success(data))
                 } else {
-                    _userDataResp.value = Result.failure(Exception("empty data"))
+                    _userDataResp.postValue(Result.failure(Exception("empty data")))
                 }
             } catch (e: Exception) {
-                _userDataResp.value = Result.failure(e)
+                _userDataResp.postValue(Result.failure(e))
             }
         }
     }
 
-    private fun mapUserdata(dataList: List<UserPojo>): UserListModel {
-        val userList = mutableListOf<UserModel>()
-        for (data in dataList) {
-            userList.add(
-                UserModel(
-                    id = data.id.toString(),
-                    imageUrl = data.avatarUrl,
-                    userName = data.login
-                )
-            )
+    fun getUserDataMore(keyword: String) {
+        viewModelScope.launch(baseDispatcher.io()) {
+            try {
+                val data = userUseCase.executeOnBackground()
+                if (data.dataList.isNotEmpty()) {
+                    _userDataResp.postValue(Result.success(data))
+                } else {
+                    _userDataResp.postValue(Result.failure(Exception("empty data")))
+                }
+            } catch (e: Exception) {
+                _userDataResp.postValue(Result.failure(e))
+            }
         }
-        return UserListModel(userList)
     }
 
 }
