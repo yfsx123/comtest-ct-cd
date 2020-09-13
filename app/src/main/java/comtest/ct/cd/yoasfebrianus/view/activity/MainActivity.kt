@@ -79,6 +79,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun bindUi() {
+        supportActionBar?.hide()
         recyclerView = findViewById(R.id.recycler_view)
         etSearch = findViewById(R.id.et_search)
         sortMenu = findViewById(R.id.btn_menu)
